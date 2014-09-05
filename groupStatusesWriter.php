@@ -8,20 +8,36 @@
 
     $URL = "https://$USER:$PASSWORD@$SITE/api/xml";
 
-    if($xml = file_get_contents($URL))
+    
+    //TODO: improve efficiency. Currently creates a temporary file using curl. Then uses file_get_contents on that temporary local file.
+    $localfile = 'tempFile.txt';
+    $ch = curl_init($URL);
+    $fp = fopen($localfile,'w');
+
+    curl_setopt($ch, CURLOPT_FILE, $fp);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+
+    curl_exec($ch);
+    curl_close($ch);
+    fclose($fp);
+
+    // Get the data into memory and delete the temp file
+    if($xml = file_get_contents($localfile))
     {
         if(!file_exists('results/status.xml'))
         {
             mkdir('results', 0777, true);
         }
         file_put_contents('results/status.xml' , $xml);
-    }    
+    }
     else
     {
         exit('Could not get xml');
     }
 
-
+    unlink($localfile);
+    //END OF TODO
+ 
     $finalPage = 'json/allJobs.json';
     $grpList = parse_ini_file('groups.ini');
 
